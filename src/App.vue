@@ -1,30 +1,46 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import TextViewer from './components/TextViewer.vue'
+
+// Mock File for demonstration purposes
+const mockFileContent = `This is the first paragraph. It provides some example text to demonstrate the highlighting functionality.
+ 
+This is the second paragraph. It should load after the first one is processed by the TextViewer component.`
+
+// Convert the mock string into a File object (browser-compatible demo)
+const mockFile = new File([mockFileContent], "mockFile.txt", { type: "text/plain" })
 </script>
 
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div id="app">
+    <header>
+      <h1>TextViewer Demo</h1>
+    </header>
+<!--    <main>-->
+      <TextViewer :file="mockFile" />
+<!--    </main>-->
   </div>
-  <HelloWorld msg="Vite + Vue" />
 </template>
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+#app {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 2rem;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+header {
+  margin-bottom: 1rem;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+h1 {
+  font-size: 2rem;
+  color: #333;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 </style>
