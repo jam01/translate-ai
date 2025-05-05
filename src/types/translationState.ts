@@ -30,7 +30,6 @@ export interface Segment {
 
 // Full document state
 export interface TranslationDocument {
-    filePath: string; // can be null if not saved yet
     segments: Segment[];
     sourceTextHash?: string; // optional hash to detect changes
     lastProcessedByteOffset: number; // last processed byte offset

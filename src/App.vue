@@ -1,23 +1,39 @@
 <script setup lang="ts">
-import TextViewer from './components/TextViewer.vue'
+import { ref, watchEffect } from "vue";
+import SourcePicker from "./components/SourcePicker.vue";
+import SourceViewer from "./components/SourceViewer.vue";
+import { useTranslationStore } from "./store/translationStore.ts";
 
-// Mock File for demonstration purposes
-const mockFileContent = `This is the first paragraph. It provides some example text to demonstrate the highlighting functionality.
- 
-This is the second paragraph. It should load after the first one is processed by the TextViewer component.`
+// Access the store
+const store = useTranslationStore();
 
-// Convert the mock string into a File object (browser-compatible demo)
-const mockFile = new File([mockFileContent], "mockFile.txt", { type: "text/plain" })
+// Check if a file has been loaded
+const isFileSelected = ref(!!store.sourceFile);
+
+// Reactively update the state when the source file changes
+watchEffect(() => {
+  isFileSelected.value = !!store.sourceFile;
+});
 </script>
 
 <template>
   <div id="app">
     <header>
-      <h1>TextViewer Demo</h1>
+      <h1>AI Assisted Translation</h1>
     </header>
-<!--    <main>-->
-      <TextViewer :file="mockFile" />
-<!--    </main>-->
+    <main>
+      <!-- Show SourcePicker when no file is selected -->
+      <div v-if="!isFileSelected" class="file-selection-area">
+        <h2>Select a Source File to Begin</h2>
+        <SourcePicker />
+      </div>
+
+      <!-- Show SourceViewer when a file is selected -->
+      <div v-else class="translation-area">
+        <h2>Translation Interface</h2>
+        <SourceViewer />
+      </div>
+    </main>
   </div>
 </template>
 
@@ -25,7 +41,7 @@ const mockFile = new File([mockFileContent], "mockFile.txt", { type: "text/plain
 #app {
   font-family: Arial, sans-serif;
   text-align: center;
-  margin: 2rem;
+  padding: 2rem;
 }
 
 header {
@@ -38,9 +54,18 @@ h1 {
 }
 
 main {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
+  margin-top: 2rem;
+}
+
+.file-selection-area,
+.translation-area {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
 }
 </style>
