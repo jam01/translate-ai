@@ -20,7 +20,6 @@ export interface TranslationDecision {
 export interface Segment {
     id: number;
     range: SegmentRange;
-    status: 'unprocessed' | 'processed';
     translation?: string;
     comments: string[];
     annotations: string[];
@@ -30,8 +29,9 @@ export interface Segment {
 
 // Full document state
 export interface TranslationDocument {
+    sourceName: string;
     segments: Segment[];
     sourceTextHash?: string; // optional hash to detect changes
-    lastProcessedByteOffset: number; // last processed byte offset
+    lastProcessedPosition: TextPosition; // last processed text position
     lastUpdatedAt: number;
 }

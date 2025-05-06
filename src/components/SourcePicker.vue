@@ -8,8 +8,7 @@ async function handleFileSelection(event: Event) {
   const file = input.files?.[0];
   if (!file) return;
 
-  // Save the selected file to the store
-  store.setSourceFile(file);
+  store.setSourceFile(file); // Set the selected file to the store
 }
 </script>
 

@@ -1,24 +1,26 @@
 import { defineStore } from 'pinia'
-import type {Segment, SegmentRange, TranslationDecision, TranslationDocument} from "../types/translationState.ts";
+import type {
+    Segment,
+    SegmentRange,
+    TranslationDecision,
+    TranslationDocument
+} from "../types/translationState.ts";
 
 
 export const useTranslationStore = defineStore('translation', {
     state: () => ({
         sourceFile: null as File | null,
+        workingSegment: null as SegmentRange | null,
         translationDoc: {
+            sourceName: 'unnamed.txt',
             segments: [],
             lastUpdatedAt: Date.now(),
-            lastProcessedByteOffset: 0,
+            lastProcessedPosition: { row: 0, column: 0, byteOffset: 0 },
         } as TranslationDocument,
     }),
 
     getters: {
         hasSegments: (state): boolean => state.translationDoc.segments.length > 0,
-        progress: (state): number => {
-            const total = state.translationDoc.segments.length
-            const processed = state.translationDoc.segments.filter((s) => s.status === 'processed').length
-            return total ? Math.round((processed / total) * 100) : 0
-        },
     },
 
     actions: {
@@ -26,37 +28,25 @@ export const useTranslationStore = defineStore('translation', {
             const newSegment: Segment = {
                 id: this.translationDoc.segments.length + 1,
                 range,
-                status: 'unprocessed',
                 comments: [],
                 annotations: [],
                 decisions: [],
                 updatedAt: undefined,
             }
             this.translationDoc.segments.push(newSegment)
-            this.translationDoc.lastProcessedByteOffset = range.end.byteOffset
-            this.saveToLocalStorage()
-        },
-
-        markSegmentAsTranslated(id: number, translation: string): void {
-            const seg = this.getSegmentById(id)
-            if (!seg) return
-            seg.translation = translation
-            seg.status = 'processed'
-            seg.updatedAt = Date.now()
-            this.translationDoc.lastProcessedByteOffset = seg.range.end.byteOffset
-            this.saveToLocalStorage()
+            this.translationDoc.lastUpdatedAt = Date.now()
+            this.saveToBrowserStorage()
         },
 
         updateSegmentTranslation(id: number, translation: string): void {
             const seg = this.getSegmentById(id)
-            if (!seg) return
+            if (!seg) throw new Error("Segment not found!")
 
             seg.translation = translation
-            seg.status = 'processed'
             seg.updatedAt = Date.now()
             this.translationDoc.lastUpdatedAt = Date.now()
 
-            this.saveToLocalStorage()
+            this.saveToBrowserStorage()
         },
 
         addCommentToSegment(id: number, comment: string): void {
@@ -64,7 +54,7 @@ export const useTranslationStore = defineStore('translation', {
             if (!seg) return
 
             seg.comments.push(comment)
-            this.saveToLocalStorage()
+            this.saveToBrowserStorage()
         },
 
         addAnnotationToSegment(id: number, annotation: string): void {
@@ -72,7 +62,7 @@ export const useTranslationStore = defineStore('translation', {
             if (!seg) return
 
             seg.annotations.push(annotation)
-            this.saveToLocalStorage()
+            this.saveToBrowserStorage()
         },
 
         addTranslationDecision(id: number, decision: TranslationDecision): void {
@@ -80,7 +70,7 @@ export const useTranslationStore = defineStore('translation', {
             if (!seg) return
 
             seg.decisions.push(decision)
-            this.saveToLocalStorage()
+            this.saveToBrowserStorage()
         },
 
         getSegmentById(id: number): Segment | undefined {
@@ -89,23 +79,24 @@ export const useTranslationStore = defineStore('translation', {
 
         setSourceFile(file: File): void {
             this.sourceFile = file
+            this.translationDoc.sourceName = file.name
         },
 
         loadDocument(data: TranslationDocument): void {
             this.$state.translationDoc = data
-            this.saveToLocalStorage()
+            this.saveToBrowserStorage()
         },
 
-        saveToLocalStorage(): void {
+        saveToBrowserStorage(): void {
             localStorage.setItem('translation_session', JSON.stringify(this.$state.translationDoc))
         },
 
-        loadFromLocalStorage(): boolean {
+        loadFromBrowserStorage(): boolean {
             const raw = localStorage.getItem('translation_session')
             if (raw) {
                 try {
                     const parsed = JSON.parse(raw)
-                    this.$patch({translationDoc: parsed})
+                    this.$patch({ translationDoc: parsed })
                     return true
                 } catch (e) {
                     console.error('Failed to load session:', e)
@@ -118,6 +109,10 @@ export const useTranslationStore = defineStore('translation', {
         clearSession(): void {
             localStorage.removeItem('translation_session')
             this.$reset()
+        },
+
+        setWorkingSegment(range: SegmentRange): void {
+            this.workingSegment = range
         },
     },
 })

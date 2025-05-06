@@ -1,36 +1,36 @@
-const encoder = new TextEncoder(); // Create TextEncoder once at the top
-
 /**
- * Splits input text into segments based on paragraph boundaries and word limits.
+ * Extracts the next text segment from the input text, respecting paragraph and sentence boundaries.
  *
  * @param text - The input text to be segmented
- * @param maxWordsPerSegment - Maximum number of words allowed per segment (default: 100)
- * @returns Object containing end offset and byte offset of the segment, or null if text is empty
+ * @param wordLimit - Maximum number of words to include in the segment (default: 100)
+ * @returns Object containing the ending index of the segment, or null if the input is empty
+ *          - index: The character offset where the segment ends
+ *          - Returns null for empty or whitespace-only input
  */
 export function nextSegment(
     text: string,
-    maxWordsPerSegment: number = 100
-): { endOffset: number; byteOffset: number } | null {
+    wordLimit: number = 100
+): { index: number; } | null {
     if (!text.trim()) {
         return null; // Empty text handling
     }
 
     // Find the next paragraph boundary
-    const paragraphEnd = text.search(/\n\s*\n/);
+    const paragraphEnd = text.search(/\n\s*\n/); // Search for paragraph delimiters
+    const delimiterLength = paragraphEnd !== -1 ? text.match(/\n\s*\n/)![0].length : 0; // Dynamically calculate the delimiter length
     const paragraphText = paragraphEnd !== -1 ? text.slice(0, paragraphEnd) : text;
 
     const words = paragraphText.split(/\s+/);
     const wordCount = words.length;
 
-    if (wordCount <= maxWordsPerSegment) {
+    if (wordCount <= wordLimit) {
         // Entire paragraph fits
-        const endOffset = paragraphEnd !== -1 ? paragraphEnd + 2 : text.length; // Include "\n\n"
-        const byteOffset = encoder.encode(text.slice(0, endOffset)).length;
-        return { endOffset, byteOffset };
+        const segmentEnd = paragraphEnd !== -1 ? paragraphEnd + delimiterLength : text.length; // Include accurate delimiter
+        return { index: segmentEnd };
     }
 
     // Split into sentences and build the segment
-    const sentenceOffsets = getSentencesDelims(paragraphText);
+    const sentenceOffsets = getSentenceBoundaries(paragraphText);
     let currentWordCount = 0;
     let segmentEndOffset = 0;
 
@@ -38,7 +38,7 @@ export function nextSegment(
         const sentenceText = text.slice(start, end);
         const wordsInSentence = sentenceText.split(/\s+/).length;
 
-        if (currentWordCount + wordsInSentence > maxWordsPerSegment) {
+        if (currentWordCount > 0 && currentWordCount + wordsInSentence > wordLimit) {
             // If adding this sentence would exceed the word limit, stop
             break;
         }
@@ -47,24 +47,27 @@ export function nextSegment(
         segmentEndOffset = end;
     }
 
-    const byteOffset = encoder.encode(text.slice(0, segmentEndOffset)).length;
-    return { endOffset: segmentEndOffset, byteOffset };
+    return { index: segmentEndOffset };
 }
 
 /**
- * Helper function that splits a paragraph into sentence offsets.
+ * Helper function that identifies sentence boundaries in a paragraph.
+ * Uses regex pattern matching to detect sentence endings (., !, ?) and captures
+ * the positions of sentence boundaries including trailing spaces.
  *
  * @param paragraph - The paragraph text to split into sentences
  * @returns Array of objects containing start and end offsets for each sentence
+ *          - start: The character offset where the sentence begins
+ *          - end: The character offset where the sentence ends (including trailing spaces)
  */
-function getSentencesDelims(paragraph: string): { start: number; end: number }[] {
-    const sentenceRegex = /[^.!?]*[.!?]+(?:\s|$)/g; // Match sentences with punctuation
-    const offsets: { start: number; end: number }[] = [];
+function getSentenceBoundaries(paragraph: string): { start: number; end: number }[] {
+    const sentenceRegex = /[^.!?]*[.!?]+(?:\s|$)/g; // Match sentences, including their following spaces
+    const boundaries: { start: number; end: number }[] = [];
     let match;
 
     while ((match = sentenceRegex.exec(paragraph)) !== null) {
-        offsets.push({ start: match.index, end: sentenceRegex.lastIndex });
+        boundaries.push({ start: match.index, end: sentenceRegex.lastIndex });
     }
 
-    return offsets;
+    return boundaries;
 }
