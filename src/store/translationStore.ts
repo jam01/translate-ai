@@ -10,6 +10,7 @@ import type {
 export const useTranslationStore = defineStore('translation', {
     state: () => ({
         sourceFile: null as File | null,
+        sessionStarted: false as boolean,
         workingSegment: null as SegmentRange | null,
         translationDoc: {
             sourceName: 'unnamed.txt',
@@ -24,6 +25,12 @@ export const useTranslationStore = defineStore('translation', {
     },
 
     actions: {
+        startSession() {
+            this.$state.sessionStarted = true;
+        },
+        resetSession() {
+            this.$state.sessionStarted = false;
+        },
         addSegment(range: SegmentRange): void {
             const newSegment: Segment = {
                 id: this.translationDoc.segments.length + 1,

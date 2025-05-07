@@ -117,12 +117,12 @@ const highlightedText = computed(() => {
 <template>
   <div v-if="store.sourceFile" class="text-viewer">
     <div
-      class="text-content"
-      @mouseup="handleSelection"
-      v-html="highlightedText"
-      contenteditable="false"
+        class="text-content"
+        @mouseup="handleSelection"
+        v-html="highlightedText"
+        contenteditable="false"
     ></div>
-<!--    <button @click="loadNextChunk">Load More</button>-->
+<!--    <button class="load-next-btn" @click="loadNextChunk">▶ Load Next Segment</button>-->
   </div>
   <div v-else class="placeholder">
     <p>No source file selected yet. Please select a file to begin.</p>
@@ -131,23 +131,55 @@ const highlightedText = computed(() => {
 
 <style scoped>
 .text-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   padding: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-bottom: 1rem;
+  margin-top: 1rem;
 }
+
 .text-content {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  padding: 1rem;
+  border: 1px solid #444;
+  border-radius: 6px;
   white-space: pre-wrap;
   word-wrap: break-word;
+  line-height: 1.6;
+  font-size: 1rem;
+  min-height: 200px;
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
 }
+
 mark {
-  background-color: yellow;
-  color: black;
+  background-color: #ffd54f;
+  color: #000;
+  padding: 2px 4px;
+  border-radius: 3px;
 }
+
 .placeholder {
   margin-top: 1rem;
   font-style: italic;
   text-align: center;
-  color: gray;
+  color: #aaa;
+}
+
+.load-next-btn {
+  padding: 0.5rem 1rem;
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  align-self: flex-start;
+  transition: background-color 0.2s ease;
+}
+
+.load-next-btn:hover {
+  background-color: #369d6d;
 }
 </style>
