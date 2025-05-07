@@ -6,26 +6,20 @@ import { nextSegment } from "../services/segmenter.ts";
 
 const store = useTranslationStore();
 
-// Local state
 const textContent = ref("");
 const workingRange = ref<{ start: number; end: number } | null>(null);
 
-// Watch the `sourceFile` in case it changes
 watch(
   () => store.sourceFile,
   async (newFile) => {
     if (newFile) {
-      // Reset any state when a new file is selected
       textContent.value = "";
-
-      // Load the first chunk of the new file
       await loadNextChunk();
     }
   },
   { immediate: true }
 );
 
-// Fetch the next text chunk
 async function loadNextChunk() {
   const source = store.sourceFile;
   if (!source) return;
@@ -33,7 +27,7 @@ async function loadNextChunk() {
   const result = await seekToParagraph(
       source,
       store.translationDoc.lastProcessedPosition.byteOffset,
-      100); // Read 100 words max
+      550); // Read 100 words max
 
   if (!result?.text) return;
 
@@ -106,11 +100,10 @@ const highlightedText = computed(() => {
   if (!workingRange.value) return textContent.value;
 
   const { start, end } = workingRange.value;
-  const before = textContent.value.slice(0, start);
   const highlighted = textContent.value.slice(start, end);
   const after = textContent.value.slice(end);
 
-  return `${before}<mark>${highlighted}</mark>${after}`;
+  return `<mark class="mark-source">${highlighted}</mark>${after}`;
 });
 </script>
 
@@ -132,16 +125,17 @@ const highlightedText = computed(() => {
 <style scoped>
 .text-viewer {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  margin-top: 1rem;
+  padding: 0;
+  margin: 0;
+  height: 100%;
 }
 
 .text-content {
   background-color: #1e1e1e;
   color: #f0f0f0;
-  padding: 1rem;
+  padding: 0.5rem 1rem;
   border: 1px solid #444;
   border-radius: 6px;
   white-space: pre-wrap;
@@ -149,15 +143,10 @@ const highlightedText = computed(() => {
   line-height: 1.6;
   font-size: 1rem;
   min-height: 200px;
-  overflow-y: auto;
-  max-height: calc(100vh - 160px);
-}
-
-mark {
-  background-color: #ffd54f;
-  color: #000;
-  padding: 2px 4px;
-  border-radius: 3px;
+  flex: 1;
+  text-align: left;
+  overflow-y: auto; /* Scroll content internally */
+  overflow-x: clip; /* Hide horizontal scrollbar */
 }
 
 .placeholder {

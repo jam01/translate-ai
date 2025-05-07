@@ -1,77 +1,51 @@
 <script setup lang="ts">
 import { ref, watchEffect } from "vue";
-import SourcePicker from "./components/SourcePicker.vue";
-import SourceViewer from "./components/SourceViewer.vue";
 import { useTranslationStore } from "./store/translationStore.ts";
+import TranslationWorkspace from "./components/TranslationWorkspace.vue";
+import SourcePicker from "./components/SourcePicker.vue";
 
-// Access the store
 const store = useTranslationStore();
 
 const isSessionStarted = ref(store.sessionStarted);
-
 watchEffect(() => {
   isSessionStarted.value = store.sessionStarted;
 });
 </script>
 
 <template>
-  <div id="app">
-    <header class="app-header">
-      <h1>AI Assisted Translation</h1>
-    </header>
-    <main class="app-main">
-      <!-- Centered File Picker -->
-      <div v-if="!isSessionStarted" class="centered-container">
-        <div class="config-card">
-          <h2>Select a Source File to Begin</h2>
-          <SourcePicker />
-        </div>
+  <nav class="app-navbar">
+    <div class="navbar-title">AI Assisted Translation</div>
+    <div class="navbar-buttons">
+      <!-- Placeholder for future buttons -->
+    </div>
+  </nav>
+  <main class="app-main">
+    <div v-if="!isSessionStarted" class="centered-container">
+      <div class="config-card">
+        <h2>Select a Source File to Begin</h2>
+        <SourcePicker />
       </div>
+    </div>
 
-      <!-- Full-width translation workspace -->
-      <div v-else class="workspace-container">
-        <SourceViewer />
-      </div>
-    </main>
-  </div>
+    <div v-else class="workspace-container">
+      <TranslationWorkspace />
+    </div>
+  </main>
 </template>
 
 <style scoped>
-:root {
-  --bg-color: #1e1e1e;
-  --text-color: #f0f0f0;
-  --accent-color: #42b983;
-  --card-bg: #2d2d2d;
-  --border-color: #444;
-  --title-color: #ffffff;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}
-
-#app {
+.app-navbar {
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.app-header {
-  background-color: #121212;
-  color: white;
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 1.75rem;
-  text-align: left;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--navbar-bg-color);
+  padding-left: 2rem;
+  color: var(--text-color);
+  width: 100%;
+  height: 3.5rem;
+  position: fixed;
+  top: 0;
+  z-index: 10;
 }
 
 .app-main {
@@ -100,13 +74,15 @@ body {
 
 .config-card h2 {
   color: var(--title-color);
-  margin-top: 0;
+  margin: 0;
   font-size: 1.25rem;
-  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .workspace-container {
+  display: flex;
   flex: 1;
-  max-width: 100%;
+  overflow: hidden;
+  margin-top: 3.5rem;
 }
 </style>
