@@ -3,6 +3,7 @@ import { ref, watchEffect } from "vue";
 import { useTranslationStore } from "./store/translationStore.ts";
 import TranslationWorkspace from "./components/TranslationWorkspace.vue";
 import SourcePicker from "./components/SourcePicker.vue";
+import { saveProgressToFile } from "./services/fileHandler.ts";
 
 const store = useTranslationStore();
 
@@ -10,13 +11,23 @@ const isSessionStarted = ref(store.sessionStarted);
 watchEffect(() => {
   isSessionStarted.value = store.sessionStarted;
 });
+
+function saveTranslationDocument() {
+  saveProgressToFile(store.translationDoc)
+}
 </script>
 
 <template>
   <nav class="app-navbar">
     <div class="navbar-title">AI Assisted Translation</div>
     <div class="navbar-buttons">
-      <!-- Placeholder for future buttons -->
+      <button
+        v-if="isSessionStarted"
+        class="save-btn"
+        @click="saveTranslationDocument"
+      >
+        Save Document
+      </button>
     </div>
   </nav>
   <main class="app-main">
@@ -35,17 +46,39 @@ watchEffect(() => {
 
 <style scoped>
 .app-navbar {
+  box-sizing: border-box;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: var(--navbar-bg-color);
   padding-left: 2rem;
+  padding-right: 2rem;
   color: var(--text-color);
-  width: 100%;
+  left: 0;
+  right: 0;
   height: 3.5rem;
   position: fixed;
   top: 0;
   z-index: 10;
+}
+
+.navbar-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+button.save-btn {
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button.save-btn:hover {
+  background-color: #369d6d;
 }
 
 .app-main {
