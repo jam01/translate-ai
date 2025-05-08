@@ -1,9 +1,27 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useTranslationStore } from "../store/translationStore";
+import { useTranslationStore } from "../store/translationStore.ts";
 import SourceViewer from "./SourceViewer.vue";
 
 const store = useTranslationStore();
+const sourceViewerRef = ref<typeof SourceViewer | null>(null);
+const editorContent = ref("");
+
+function handleSaveAndReload() {
+  if (!sourceViewerRef.value) {
+    console.error("SourceViewer is not loaded yet.");
+    return;
+  }
+
+  if (!editorContent.value.trim()) {
+    alert("Translation content cannot be empty!");
+    return;
+  }
+
+  store.addWorkingSegment(editorContent.value);
+  editorContent.value = "";
+  sourceViewerRef.value.reloadContent();
+}
 
 const isSourceLoaded = ref(store.sourceFile);
 store.$subscribe((_mutation, state) => {
@@ -14,7 +32,7 @@ store.$subscribe((_mutation, state) => {
 <template>
   <div v-if="isSourceLoaded" class="translation-workspace">
     <div class="pane source-pane">
-      <SourceViewer />
+     <SourceViewer ref="sourceViewerRef" /><!-- Pass the ref to access SourceViewer -->
     </div>
     <div class="pane right-pane">
       <!-- Top: Diff View -->
@@ -24,9 +42,11 @@ store.$subscribe((_mutation, state) => {
       <!-- Bottom: Editable Translation -->
       <div class="editor">
         <textarea
+          v-model="editorContent"
           class="translation-editor"
           placeholder="Start editing your translation here..."
         ></textarea>
+        <button @click="handleSaveAndReload">Save & Load Next</button>
       </div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useTranslationStore } from "../store/translationStore.ts";
 import { seekToParagraph } from "../services/fileReaderService.ts";
 import { nextSegment } from "../services/segmenter.ts";
@@ -13,8 +13,7 @@ watch(
   () => store.sourceFile,
   async (newFile) => {
     if (newFile) {
-      textContent.value = "";
-      await loadNextChunk();
+      reloadContent(); // Trigger content reload when a file is loaded
     }
   },
   { immediate: true }
@@ -25,9 +24,10 @@ async function loadNextChunk() {
   if (!source) return;
 
   const result = await seekToParagraph(
-      source,
-      store.translationDoc.lastProcessedPosition.byteOffset,
-      550); // Read 100 words max
+    source,
+    store.translationDoc.lastProcessedPosition.byteOffset,
+    550 // Read 550 words max
+  );
 
   if (!result?.text) return;
 
@@ -94,6 +94,13 @@ function calculateEndPosition(
 
   return { row, column, byteOffset };
 }
+
+function reloadContent() {
+  textContent.value = "";
+  loadNextChunk();
+}
+
+defineExpose({ reloadContent });
 
 // Highlight text using `<mark>` tags
 const highlightedText = computed(() => {

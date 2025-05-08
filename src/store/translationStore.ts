@@ -31,17 +31,21 @@ export const useTranslationStore = defineStore('translation', {
         resetSession() {
             this.$state.sessionStarted = false;
         },
-        addSegment(range: SegmentRange): void {
+        addWorkingSegment(translation: string): void {
+            const seg: SegmentRange = this.workingSegment!
             const newSegment: Segment = {
                 id: this.translationDoc.segments.length + 1,
-                range,
+                range: seg,
+                translation: translation,
                 comments: [],
                 annotations: [],
                 decisions: [],
-                updatedAt: undefined,
+                updatedAt: Date.now(),
             }
             this.translationDoc.segments.push(newSegment)
+            this.translationDoc.lastProcessedPosition = newSegment.range.end
             this.translationDoc.lastUpdatedAt = Date.now()
+
             this.saveToBrowserStorage()
         },
 
