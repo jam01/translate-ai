@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useTranslationStore } from "../store/translationStore.ts";
 import SourceViewer from "./SourceViewer.vue";
+import type { Segment, SegmentRange, TranslationDocument } from "../types/translationState.ts";
 
-const store = useTranslationStore();
+const props = defineProps<{
+  source: File; // The source file
+  translationDoc: TranslationDocument; // Progress
+}>();
+
 const sourceViewerRef = ref<typeof SourceViewer | null>(null);
-const editorContent = ref("");
+const editorContent = ref('');
+const workingSegment = {
+  text: '',
+  range: {
+    start: { row: 0, column: 0, byteOffset: 0 },
+    end: { row: 0, column: 0, byteOffset: 0 }
+  }
+};
 
 function handleSaveAndReload() {
   if (!sourceViewerRef.value) {
@@ -18,21 +29,42 @@ function handleSaveAndReload() {
     return;
   }
 
-  store.addWorkingSegment(editorContent.value);
+  const seg: SegmentRange = workingSegment.range
+  const newSegment: Segment = {
+    id: props.translationDoc.segments.length + 1,
+    range: seg,
+    translation: editorContent.value,
+    comments: [],
+    annotations: [],
+    decisions: [],
+    updatedAt: Date.now(),
+  }
+  props.translationDoc.segments.push(newSegment)
+  props.translationDoc.lastProcessedPosition = newSegment.range.end
+  props.translationDoc.lastUpdatedAt = Date.now()
+
   editorContent.value = "";
-  sourceViewerRef.value.reloadContent();
+  sourceViewerRef.value.loadText();
 }
 
-const isSourceLoaded = ref(store.sourceFile);
-store.$subscribe((_mutation, state) => {
-  isSourceLoaded.value = state.sourceFile;
-});
+// Handle the segment-selected event from SourceViewer
+function handleSegmentSelected(segment: { text: string; range: SegmentRange }) {
+  workingSegment.text = segment.text;
+  workingSegment.range = segment.range;
+
+  editorContent.value = segment.text; // Pre-fill the editor with the selected text
+}
 </script>
 
 <template>
-  <div v-if="isSourceLoaded" class="translation-workspace">
+  <div class="translation-workspace">
     <div class="pane source-pane">
-     <SourceViewer ref="sourceViewerRef" /><!-- Pass the ref to access SourceViewer -->
+     <SourceViewer
+         ref="sourceViewerRef"
+         :source="props.source"
+         :translationDoc="props.translationDoc"
+         @segmentSelected="handleSegmentSelected"
+     />
     </div>
     <div class="pane right-pane">
       <!-- Top: Diff View -->
@@ -49,9 +81,6 @@ store.$subscribe((_mutation, state) => {
         <button @click="handleSaveAndReload">Save & Load Next</button>
       </div>
     </div>
-  </div>
-  <div v-else class="no-source-placeholder">
-    <p>No source file loaded. Please load a file to start the translation process.</p>
   </div>
 </template>
 

@@ -1,19 +1,25 @@
 <script setup lang="ts">
-import { ref, watchEffect } from "vue";
-import { useTranslationStore } from "./store/translationStore.ts";
+import { ref } from "vue";
 import TranslationWorkspace from "./components/TranslationWorkspace.vue";
 import SourcePicker from "./components/SourcePicker.vue";
 import { saveProgressToFile } from "./services/fileHandler.ts";
+import type { TranslationDocument } from "./types/translationState.ts";
 
-const store = useTranslationStore();
+const source = ref<File | null>(null);
+let translationDoc: TranslationDocument | null = null;
 
-const isSessionStarted = ref(store.sessionStarted);
-watchEffect(() => {
-  isSessionStarted.value = store.sessionStarted;
-});
+function startTranslation(sourceFile: File, doc: TranslationDocument | null) {
+  source.value = sourceFile;
+  translationDoc = doc || {
+    sourceName: sourceFile.name,
+    segments: [],
+    lastUpdatedAt: Date.now(),
+    lastProcessedPosition: { row: 0, column: 0, byteOffset: 0 },
+  }
+}
 
 function saveTranslationDocument() {
-  saveProgressToFile(store.translationDoc)
+  saveProgressToFile(translationDoc!)
 }
 </script>
 
@@ -22,7 +28,7 @@ function saveTranslationDocument() {
     <div class="navbar-title">AI Assisted Translation</div>
     <div class="navbar-buttons">
       <button
-        v-if="isSessionStarted"
+        v-if="source"
         class="save-btn"
         @click="saveTranslationDocument"
       >
@@ -31,15 +37,17 @@ function saveTranslationDocument() {
     </div>
   </nav>
   <main class="app-main">
-    <div v-if="!isSessionStarted" class="centered-container">
+    <div v-if="!source" class="centered-container">
       <div class="config-card">
         <h2>Select a Source File to Begin</h2>
-        <SourcePicker />
+        <SourcePicker @startTranslation="startTranslation" />
       </div>
     </div>
-
     <div v-else class="workspace-container">
-      <TranslationWorkspace />
+      <TranslationWorkspace
+          :source="source!"
+          :translationDoc="translationDoc!"
+      />
     </div>
   </main>
 </template>

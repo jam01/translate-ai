@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import {computed, ref} from "vue";
-import { useTranslationStore } from "../store/translationStore.ts";
+import { computed, ref } from "vue";
+import type { TranslationDocument } from "../types/translationState.ts";
 
-const store = useTranslationStore();
+const emit = defineEmits<{
+  (e: "start-translation", source: File, translationDoc: TranslationDocument | null): void;
+}>();
 
 const sourceFile = ref<File | null>(null);
 const progressFile = ref<File | null>(null);
+let translationDoc: TranslationDocument | null = null;
 
 const sourceFileName = computed(() => sourceFile.value?.name || "");
 const progressFileName = computed(() => progressFile.value?.name || "");
@@ -13,23 +16,19 @@ const progressFileName = computed(() => progressFile.value?.name || "");
 function handleSourceFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
-  if (file) {
-    sourceFile.value = file;
-    store.setSourceFile(file);
-  }
+  if (!file) return;
+  sourceFile.value = file;
 }
 
 async function handleProgressFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (!file) return;
-
   progressFile.value = file;
 
   try {
     const content = await file.text();
-    const doc = JSON.parse(content);
-    store.loadDocument(doc);
+    translationDoc = JSON.parse(content);
   } catch (error) {
     alert("Failed to parse translation progress file.");
     console.error(error);
@@ -38,7 +37,7 @@ async function handleProgressFileChange(event: Event) {
 
 function startTranslation() {
   if (!sourceFile.value) return;
-  store.startSession();
+  emit("start-translation", sourceFile.value, translationDoc);
 }
 </script>
 

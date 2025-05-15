@@ -1,33 +1,24 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
-import { useTranslationStore } from "../store/translationStore.ts";
+import { ref, onMounted, computed } from "vue";
 import { seekToParagraph } from "../services/fileReaderService.ts";
 import { nextSegment } from "../services/segmenter.ts";
+import type { SegmentRange, TranslationDocument } from "../types/translationState.ts";
 
-const store = useTranslationStore();
+const props = defineProps<{
+  source: File; // The file to be displayed (always available)
+  translationDoc: TranslationDocument; // Translation document passed as a prop
+}>();
+const emit = defineEmits<{
+  (e: "segment-selected", segment: { text: string; range: SegmentRange }): void;
+}>();
 
-const textContent = ref("");
+const textContent = ref('');
 const workingRange = ref<{ start: number; end: number } | null>(null);
 
-watch(
-  () => store.sourceFile,
-  async (newFile) => {
-    if (newFile) {
-      reloadContent(); // Trigger content reload when a file is loaded
-    }
-  },
-  { immediate: true }
-);
-
-async function loadNextChunk() {
-  const source = store.sourceFile;
-  if (!source) return;
-
-  const result = await seekToParagraph(
-    source,
-    store.translationDoc.lastProcessedPosition.byteOffset,
-    550 // Read 550 words max
-  );
+// Load the next portion of text from the file.
+async function loadText() {
+  const position = props.translationDoc.lastProcessedPosition;
+  const result = await seekToParagraph(props.source, position.byteOffset, 550); // Start from the last processed byte offset, read max 550 words
 
   if (!result?.text) return;
 
@@ -38,11 +29,15 @@ async function loadNextChunk() {
     return;
   }
 
+  const selectedText = textContent.value.slice(0, segmentRange.index);
   workingRange.value = { start: 0, end: segmentRange.index };
-  store.setWorkingSegment({
-    start: store.translationDoc.lastProcessedPosition,
-    end: calculateEndPosition(textContent.value.slice(0, segmentRange.index), store.translationDoc.lastProcessedPosition)
-  })
+  emit("segment-selected", {
+    text: selectedText,
+    range: {
+      start: props.translationDoc.lastProcessedPosition,
+      end: calculateEndPosition(selectedText, props.translationDoc.lastProcessedPosition)
+    }
+  });
 }
 
 // Handle text selection for custom highlighting
@@ -51,18 +46,22 @@ function handleSelection() {
   if (!selection || selection.rangeCount === 0) return;
 
   const range = selection.getRangeAt(0);
-  const selectedText = range.toString();
+  let selectedText = range.toString();
   if (!selectedText) return;
 
   const startOffset = textContent.value.indexOf(selectedText); // NOTE: if selected a non-unique text, first picked
   if (startOffset === -1) return;
 
   const endOffset = startOffset + selectedText.length;
+  selectedText = textContent.value.slice(0, endOffset);
   workingRange.value = { start: 0, end: endOffset };
-  store.setWorkingSegment({
-    start: store.translationDoc.lastProcessedPosition,
-    end: calculateEndPosition(selectedText, store.translationDoc.lastProcessedPosition)
-  })
+  emit("segment-selected", {
+      text: selectedText,
+      range: {
+        start: props.translationDoc.lastProcessedPosition,
+        end: calculateEndPosition(selectedText, props.translationDoc.lastProcessedPosition)
+      }}
+  );
 
   // Clear the selection visually
   selection.removeAllRanges();
@@ -95,13 +94,6 @@ function calculateEndPosition(
   return { row, column, byteOffset };
 }
 
-function reloadContent() {
-  textContent.value = "";
-  loadNextChunk();
-}
-
-defineExpose({ reloadContent });
-
 // Highlight text using `<mark>` tags
 const highlightedText = computed(() => {
   if (!workingRange.value) return textContent.value;
@@ -112,10 +104,16 @@ const highlightedText = computed(() => {
 
   return `<mark class="mark-source">${highlighted}</mark>${after}`;
 });
+
+defineExpose({ loadText })
+
+onMounted(() => {
+  loadText(); // Load content when the component is mounted
+});
 </script>
 
 <template>
-  <div v-if="store.sourceFile" class="text-viewer">
+  <div v-if="source" class="text-viewer">
     <div
         class="text-content"
         @mouseup="handleSelection"
