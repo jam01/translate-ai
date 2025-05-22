@@ -65,19 +65,38 @@ const simple = new SimpleModelConfig(
       Authorization: "Bearer " + token,
     }
 )
+const main = new SimpleModelConfig(
+    "You are a skilled translator specializing in political and revolutionary texts from Latin America, with particular expertise in Sandinista ideology and the Nicaraguan revolutionary process (1926–1979). Your task is to translate the following sentence(s) written by Carlos Fonseca Amador from Spanish into English with precision and sensitivity to the original tone, intent, and ideological context.\n" +
+    "\n" +
+    "The text may contain terms related to Marxism-Leninism, anti-imperialism, class struggle, and guerrilla struggle. When translating:\n" +
+    "\n" +
+    "- Preserve the **political connotations** of key terms (e.g., “pueblo,” “lucha de clases,” “imperialismo”).\n" +
+    "- Maintain the **original tone**—whether formal, urgent, inspirational, or analytical.\n" +
+    "- Ensure the **rhetorical force** of slogans or ideological phrases is retained.\n" +
+    "- Respect the author's stylistic and structural choices  as much as possible.\n" +
+    "    - If a phrase is common in Spanish of the time but would sound unnatural in English, adapt it thoughtfully while preserving meaning and tone.\n" +
+    "    - If a phrase appears intentionally unusual or \"weird\" even in the original context, retain it unless it severely hinders comprehension.\n" +
+    "\n" +
+    "Your goal is to produce a translation that is both faithful to the original  and readable to contemporary audiences , especially those engaged with radical politics, history, and revolutionary theory.",
+    {
+      Authorization: "Bearer " + token,
+    }
+)
 
-const translate = new TranslationService(simple, simple)
+const translate = new TranslationService(main, simple)
 
 watch(
     () => workingSegment.text,
     async (newText) => {
       if (newText) {
         // const t1 = "boop" + Math.random();
-        // const t2 = "boop2" + Math.random();
-        const { candidate1: t1, candidate2: t2 } = await translate.translate(newText);
-        candidate1.value = t1;
-        candidate2.value = t2;
-        editorContent.value = t1;
+        // const t2 = "boop" + Math.random();
+        // const t1 = 'The Sandinista revolutionary must avoid the simple "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
+        // const t2 = 'The Sandinista revolutionary must avoid the mere "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
+        const { candidate1: c1, candidate2: c2 } = await translate.translate(newText);
+        candidate1.value = c1;
+        candidate2.value = c2;
+        editorContent.value = c1;
       }
     }
 );
@@ -165,13 +184,6 @@ textarea.translation-editor {
   color: var(--text-color);
   font-size: 1rem;
   resize: none;
-}
-
-.no-source-placeholder {
-  text-align: center;
-  padding: 2rem;
-  color: #999;
-  font-style: italic;
 }
 
 textarea.translation-editor,

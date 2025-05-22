@@ -103,3 +103,24 @@ button:focus-visible {
     padding: 2px 4px;
     border-radius: 3px;
 }
+
+.d2h-file-header, .d2h-info, .d2h-code-linenumber, .d2h-code-line-prefix {
+    display: none;
+}
+.line-num1, .line-num2 {
+    padding: 0
+}
+.d2h-code-linenumber {
+    width: 3.75em
+}
+.d2h-code-line, .d2h-code-line-ctn {
+    /* https://github.com/rtfpessoa/diff2html/issues/99#issuecomment-1034567628 */
+    white-space: normal;
+    width: 100%;
+    padding: 0;
+
+    border-radius: 4px;
+    color: var(--text-color);
+    font-size: 1rem;
+    resize: none;
+}

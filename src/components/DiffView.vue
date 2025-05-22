@@ -32,9 +32,6 @@ const diffHtml = computed(() => {
   white-space: pre-wrap;
   word-wrap: break-word;
 
-  /* Adding container limits */
-  max-width: 100%; /* Ensures the diff stays within the container */
-  overflow-x: auto; /* Adds scroll for horizontal overflow */
-  box-sizing: border-box; /* Includes padding and border in element width */
+  all: unset; /* Clear inherited weird styles if any */
 }
 </style>
