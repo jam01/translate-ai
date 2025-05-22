@@ -35,7 +35,7 @@ async function loadText() {
     text: selectedText,
     range: {
       start: props.translationDoc.lastProcessedPosition,
-      end: calculateEndPosition(selectedText, props.translationDoc.lastProcessedPosition)
+      end: calculateEndPosition(props.translationDoc.lastProcessedPosition, selectedText)
     }
   });
 }
@@ -59,7 +59,7 @@ function handleSelection() {
       text: selectedText,
       range: {
         start: props.translationDoc.lastProcessedPosition,
-        end: calculateEndPosition(selectedText, props.translationDoc.lastProcessedPosition)
+        end: calculateEndPosition(props.translationDoc.lastProcessedPosition, selectedText)
       }}
   );
 
@@ -69,13 +69,13 @@ function handleSelection() {
 
 /**
  * Helper: Calculate the end position (row, column, byteOffset) of the segment.
- * @param segmentText The text being processed
  * @param startPosition The starting position (`row`, `column`, `byteOffset`)
+ * @param segmentText The text being processed
  * @returns The calculated end position as a `TextPosition`
  */
 function calculateEndPosition(
-    segmentText: string,
-    startPosition: { row: number; column: number; byteOffset: number }
+    startPosition: { row: number; column: number; byteOffset: number },
+    segmentText: string
 ): { row: number; column: number; byteOffset: number } {
   const lines = segmentText.split('\n'); // Split text into lines to calculate rows
 
@@ -113,7 +113,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="source" class="text-viewer">
+  <div class="text-viewer">
     <div
         class="text-content"
         @mouseup="handleSelection"
@@ -121,9 +121,6 @@ onMounted(() => {
         contenteditable="false"
     ></div>
 <!--    <button class="load-next-btn" @click="loadNextChunk">▶ Load Next Segment</button>-->
-  </div>
-  <div v-else class="placeholder">
-    <p>No source file selected yet. Please select a file to begin.</p>
   </div>
 </template>
 

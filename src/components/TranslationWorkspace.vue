@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import {reactive, ref, watch} from "vue";
+import DiffView from "./DiffView.vue";
 import SourceViewer from "./SourceViewer.vue";
 import type { Segment, SegmentRange, TranslationDocument } from "../types/translationState.ts";
+import { SimpleModelConfig, TranslationService } from "../services/translationService.ts";
 
 const props = defineProps<{
   source: File; // The source file
@@ -10,13 +12,16 @@ const props = defineProps<{
 
 const sourceViewerRef = ref<typeof SourceViewer | null>(null);
 const editorContent = ref('');
-const workingSegment = {
+const workingSegment = reactive({
   text: '',
   range: {
     start: { row: 0, column: 0, byteOffset: 0 },
     end: { row: 0, column: 0, byteOffset: 0 }
   }
-};
+});
+
+const candidate1 = ref('');
+const candidate2 = ref('');
 
 function handleSaveAndReload() {
   if (!sourceViewerRef.value) {
@@ -51,9 +56,31 @@ function handleSaveAndReload() {
 function handleSegmentSelected(segment: { text: string; range: SegmentRange }) {
   workingSegment.text = segment.text;
   workingSegment.range = segment.range;
-
-  editorContent.value = segment.text; // Pre-fill the editor with the selected text
 }
+
+const token = ''
+const simple = new SimpleModelConfig(
+    "You are a skilled translator. Your task is to translate the following passage from Spanish into English with precision and sensitivity to the original tone, intent, and context.",
+    {
+      Authorization: "Bearer " + token,
+    }
+)
+
+const translate = new TranslationService(simple, simple)
+
+watch(
+    () => workingSegment.text,
+    async (newText) => {
+      if (newText) {
+        // const t1 = "boop" + Math.random();
+        // const t2 = "boop2" + Math.random();
+        const { candidate1: t1, candidate2: t2 } = await translate.translate(newText);
+        candidate1.value = t1;
+        candidate2.value = t2;
+        editorContent.value = t1;
+      }
+    }
+);
 </script>
 
 <template>
@@ -69,7 +96,7 @@ function handleSegmentSelected(segment: { text: string; range: SegmentRange }) {
     <div class="pane right-pane">
       <!-- Top: Diff View -->
       <div class="diff-view">
-        <div class="diff-placeholder">This area will contain side-by-side diff views or AI-generated suggestions.</div>
+        <DiffView :candidate1="candidate1" :candidate2="candidate2" />
       </div>
       <!-- Bottom: Editable Translation -->
       <div class="editor">
