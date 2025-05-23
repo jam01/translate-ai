@@ -137,6 +137,7 @@ onMounted(() => {
 .text-content {
   background-color: #1e1e1e;
   color: #f0f0f0;
+  background: var(--card-bg);
   padding: 0.5rem 1rem;
   border: 1px solid #444;
   border-radius: 6px;

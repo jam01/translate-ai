@@ -93,7 +93,7 @@ button.save-btn:hover {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .centered-container {

@@ -59,6 +59,9 @@ const main = new SimpleModelConfig(
 
 const translator = new TranslationService(simple, main)
 
+const showCommentsDrawer = ref(false);
+const commentEditor = ref('');
+
 function handleSaveAndReload() {
   if (!sourceViewerRef.value) {
     console.error("SourceViewer is not loaded yet.");
@@ -75,7 +78,7 @@ function handleSaveAndReload() {
     id: props.translationDoc.segments.length + 1,
     range: seg,
     translation: editorContent.value,
-    comments: [],
+    comments: commentEditor.value.trim() ? [commentEditor.value.trim()] : [],
     annotations: [],
     decisions: [],
     updatedAt: Date.now(),
@@ -146,6 +149,19 @@ watch(
         <button @click="handleSaveAndReload">Save & Load Next</button>
       </div>
     </div>
+    <transition name="slide">
+      <div class="comments-sidebar" :class="{ open: showCommentsDrawer }">
+        <div class="drawer-header">
+          <h3>Comments</h3>
+          <button class="close-btn" @click="showCommentsDrawer = false">✕</button>
+        </div>
+        <textarea v-model="commentEditor" placeholder="Write a comment..."></textarea>
+      </div>
+    </transition>
+    <div class="sidebar-toggle" @click="showCommentsDrawer = !showCommentsDrawer">
+      <span>{{ showCommentsDrawer ? '→' : '←' }}</span>
+    </div>
+
   </div>
 </template>
 
@@ -246,5 +262,85 @@ textarea.translation-editor,
 
 .floating-refresh-btn:active {
   background-color: var(--bg-color);
+}
+
+.comments-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: var(--card-bg);
+  color: var(--text-color);
+  padding: 1rem;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+  transform: translateX(100%); /* hidden by default */
+  overflow-y: auto;
+}
+
+.comments-sidebar.open {
+  transform: translateX(0); /* slide in */
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-header h3 {
+  margin: 0;
+}
+
+.drawer-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.comments-sidebar textarea {
+  margin-top: 1rem;
+  resize: vertical;
+  min-height: 100px;
+  background: #1e1e1e;
+  color: var(--text-color);
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+.drawer-buttons {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer-buttons button {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sidebar-toggle {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background: var(--accent-color);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 4px 0 0 4px;
+  cursor: pointer;
+  z-index: 1000;
+  font-weight: bold;
 }
 </style>
