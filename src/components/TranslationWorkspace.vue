@@ -4,6 +4,7 @@ import DiffView from "./DiffView.vue";
 import SourceViewer from "./SourceViewer.vue";
 import type { Segment, SegmentRange, TranslationDocument } from "../types/translationState.ts";
 import { SimpleModelConfig, TranslationService } from "../services/translationService.ts";
+import { VueEasyMDE } from "vue3-easymde";
 
 const props = defineProps<{
   source: File; // The source file
@@ -141,11 +142,12 @@ watch(
         </button>
       </div>
       <div class="editor"><!-- Bottom: Editable Translation -->
-        <textarea
-          v-model="editorContent"
-          class="translation-editor"
-          placeholder="Start editing your translation here..."
-        ></textarea>
+        <VueEasyMDE v-model="editorContent"
+                    :options="{
+                      spellChecker: false,
+                      hideIcons: ['code', 'table', 'image', 'link']
+                    }"
+        />
         <button @click="handleSaveAndReload">Save & Load Next</button>
       </div>
     </div>
@@ -179,6 +181,7 @@ watch(
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   border-radius: 6px;
   color: var(--text-color);
+  text-align: left;
 }
 
 .source-pane {
@@ -203,6 +206,7 @@ watch(
   border: 1px solid #444;
   border-radius: 6px;
   overflow-y: auto;
+  padding: 0.5rem 1rem;
 }
 
 .diff-view.blurred {

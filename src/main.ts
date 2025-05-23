@@ -1,12 +1,12 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+
+import VueEasymde from 'vue3-easymde'
+import "easymde/dist/easymde.min.css"
 
 import './style.css'
 import App from './App.vue'
 
 const app = createApp(App)
 
-const pinia = createPinia()
-app.use(pinia)
-
 app.mount('#app')
+app.use(VueEasymde)

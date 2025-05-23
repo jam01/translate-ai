@@ -58,7 +58,9 @@ export class TranslationService {
     }
 
     removeBackticks(input: string): string {
-        return input.replace(/```[\s]*$/, '');
+        return input
+            .replace(/^```/, '')
+            .replace(/```[\s]*$/, '');
     }
 
     matchWhitespace(source: string, target: string): string {
