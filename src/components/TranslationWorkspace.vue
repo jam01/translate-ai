@@ -94,13 +94,13 @@ function handleSegmentSelected(segment: { text: string; range: SegmentRange }) {
   workingSegment.range = segment.range;
 }
 
-async function translate(text: string) {
+async function translate() {
   isTranslating.value = true;
   // const c1 = "boop" + Math.random();
   // const c2 = "boop" + Math.random();
   // const t1 = 'The Sandinista revolutionary must avoid the simple "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
   // const t2 = 'The Sandinista revolutionary must avoid the mere "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
-  const { candidate1: c1, candidate2: c2 } = await translator.translate(text);
+  const { candidate1: c1, candidate2: c2 } = await translator.translate(workingSegment.text);
   candidate1.value = c1;
   candidate2.value = c2;
   editorContent.value = c2;
@@ -110,7 +110,7 @@ async function translate(text: string) {
 watch(
     () => workingSegment.text,
     async (newText) => {
-      if (newText) await translate(newText)
+      if (newText) await translate()
     }
 );
 </script>
@@ -128,6 +128,14 @@ watch(
     <div class="pane right-pane">
       <div class="diff-view" :class="{ 'blurred': isTranslating }"><!-- Top: Diff View -->
         <DiffView :candidate1="candidate1" :candidate2="candidate2" />
+        <button
+            class="floating-refresh-btn"
+            @click="translate"
+            :disabled="isTranslating"
+            title="Refresh Translation"
+        >
+          🔄
+        </button>
       </div>
       <div class="editor"><!-- Bottom: Editable Translation -->
         <textarea
@@ -173,6 +181,7 @@ watch(
 }
 
 .diff-view {
+  position: relative;
   flex: 1;
   background: var(--card-bg);
   border: 1px solid #444;
@@ -205,5 +214,37 @@ textarea.translation-editor,
 .source-pane,
 .diff-view {
   max-height: 100%; /* Prevent overflowing */
+}
+
+.floating-refresh-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 10;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  height: 40px;
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.2s;
+}
+
+.floating-refresh-btn:hover {
+  background-color: var(--accent-color-hover);
+}
+
+.floating-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.floating-refresh-btn:active {
+  background-color: var(--bg-color);
 }
 </style>
