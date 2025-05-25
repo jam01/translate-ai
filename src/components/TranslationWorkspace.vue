@@ -89,6 +89,7 @@ function handleSaveAndReload() {
   props.translationDoc.lastUpdatedAt = Date.now()
 
   editorContent.value = "";
+  commentEditor.value = "";
   sourceViewerRef.value.loadText();
 }
 
