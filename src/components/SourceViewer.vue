@@ -113,7 +113,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="text-viewer">
+  <div class="source-viewer">
     <div
         class="text-content"
         @mouseup="handleSelection"
@@ -125,31 +125,23 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.text-viewer {
+.source-viewer {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 0;
-  margin: 0;
-  height: 100%;
+  overflow-y: auto;
 }
 
 .text-content {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
+  color: var(--text-color);
   background: var(--card-bg);
   padding: 0.5rem 1rem;
-  border: 1px solid #444;
-  border-radius: 6px;
   white-space: pre-wrap;
-  word-wrap: break-word;
   line-height: 1.6;
   font-size: 1rem;
   min-height: 200px;
   flex: 1;
   text-align: left;
-  overflow-y: auto; /* Scroll content internally */
-  overflow-x: clip; /* Hide horizontal scrollbar */
 }
 
 .placeholder {

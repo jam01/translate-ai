@@ -130,12 +130,12 @@ button:focus-visible {
     /* https://github.com/Ionaru/easy-markdown-editor/issues/302#issue-807731427 */
     .editor-toolbar {
         &.fullscreen {
-            z-index: 100;
+            z-index: 20;
         }
     }
     .CodeMirror {
         &.CodeMirror-fullscreen {
-            z-index: 100;
+            z-index: 20;
         }
     }
 }
@@ -151,10 +151,19 @@ button:focus-visible {
 }
 .EasyMDEContainer .editor-toolbar > .active, .editor-toolbar > button:hover, .editor-preview pre, .cm-s-easymde .cm-comment {
     background-color: var(--bg-color);
+    border: none;
+}
+.EasyMDEContainer .CodeMirror {
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0px;
+}
+.EasyMDEContainer .CodeMirror-scroll {
+    min-height: 0 !important;
 }
 .editor-toolbar {
     background-color: var(--card-bg);
-    border-color: #555;
+    border: none;
 }
 .editor-toolbar.fullscreen {
     background-color: var(--card-bg);
@@ -164,5 +173,5 @@ button:focus-visible {
 }
 /* --end */
 span.CodeMirror-selectedtext {
-    color: #000;
+    color: black;
 }

@@ -76,8 +76,8 @@ function saveTranslationDocument() {
 }
 
 button.save-btn {
-  background-color: #42b983;
-  color: white;
+  background-color: var(--accent-color);
+  color: var(--text-color);
   border: none;
   border-radius: 4px;
   padding: 0.5rem 1rem;
@@ -86,7 +86,7 @@ button.save-btn {
 }
 
 button.save-btn:hover {
-  background-color: #369d6d;
+  background-color: var(--accent-color-hover);
 }
 
 .app-main {
@@ -123,7 +123,7 @@ button.save-btn:hover {
 .workspace-container {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   margin-top: 3.5rem;
 }
 </style>

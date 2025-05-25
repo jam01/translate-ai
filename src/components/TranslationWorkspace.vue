@@ -7,7 +7,7 @@ import { SimpleModelConfig, TranslationService } from "../services/translationSe
 import simplePrompt from '../assets/prompt-simple.txt?raw';
 import mainPrompt from '../assets/prompt-main.txt?raw';
 import { VueEasyMDE } from "vue3-easymde";
-import {getText, seekToParagraph} from "../services/fileReaderService.ts";
+import { getText } from "../services/fileReaderService.ts";
 
 const props = defineProps<{
   source: File; // The source file
@@ -110,9 +110,14 @@ function goBack() {
 }
 
 function goForward() {
-  if (currSegmentIdx.value <= props.translationDoc.segments.length) {
+  if (currSegmentIdx.value < props.translationDoc.segments.length) {
     currSegmentIdx.value++;
-    loadSegment((props.translationDoc.segments[currSegmentIdx.value]));
+    if (isNext()) {
+      editorContent.value = "";
+      commentEditor.value = "";
+    } else {
+      loadSegment((props.translationDoc.segments[currSegmentIdx.value]));
+    }
   } else {
     alert("No next segments available.");
   }
@@ -133,11 +138,11 @@ watch(
 <template>
   <div class="translation-workspace">
     <div class="pane left-pane">
-      <div class="toolbar">
-        <button @click="goBack" :disabled="currSegmentIdx <= 0">← Previous</button>
-        <button @click="goForward" :disabled="currSegmentIdx == props.translationDoc.segments.length">Next →</button>
-      </div>
-      <div class="source-view">
+      <div class="source">
+        <div class="toolbar">
+          <button @click="goBack" :disabled="currSegmentIdx <= 0">← Previous</button>
+          <button @click="goForward" :disabled="currSegmentIdx == props.translationDoc.segments.length">Next →</button>
+        </div>
         <SourceViewer v-if="currSegmentIdx == props.translationDoc.segments.length"
           ref="sourceViewerRef"
           :source="props.source"
@@ -145,8 +150,8 @@ watch(
           @segmentSelected="handleSegmentSelected"
         />
         <textarea v-else
-            v-model="workingSegment.text"
-            class="prev-segment"
+                  v-model="workingSegment.text"
+                  class="prev-segment"
         ></textarea>
       </div>
       <div class="editor"><!-- Bottom: Editable Translation -->
@@ -156,7 +161,7 @@ watch(
                       hideIcons: ['code', 'table', 'image', 'link']
                     }"
         />
-        <button @click="handleSaveAndReload">Save & Load Next</button>
+        <button class="save-next-btn" @click="handleSaveAndReload">Save & Load Next</button>
       </div>
     </div>
     <div class="pane right-pane">
@@ -193,10 +198,12 @@ watch(
   height: 100%;
   width: 100%;
   gap: 0.25rem;
+  overflow: clip;
 }
 
 .pane {
   display: flex;
+  flex: 1;
   flex-direction: column;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   border-radius: 6px;
@@ -205,16 +212,52 @@ watch(
   gap: 0.25rem;
 }
 
-.left-pane {
-  width: 50%;
-  overflow-y: auto; /* Scrolling only inside the pane */
-  padding: 0; /* Removed extra padding */
-}
-
-.right-pane {
-  width: 50%;
+.source,
+.editor {
   display: flex;
   flex-direction: column;
+  height: 50%;
+  overflow: hidden;
+  justify-content: space-between;
+}
+
+.source {
+  background-color: var(--card-bg);
+  border: 1px solid #444;
+  border-radius: 6px;
+
+  .toolbar {
+    display: flex;
+    background-color: var(--bg-color);
+  }
+}
+
+.editor {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.save-next-btn {
+  border-top: 1px solid var(--border-color);
+  border-radius: 0;
+}
+
+.prev-segment {
+  color: var(--text-color);
+  background: var(--card-bg);
+  padding: 0.5rem 1rem;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 1rem;
+  min-height: 200px;
+  flex: 1;
+  text-align: left;
+
+  border: none;
+  overflow: auto;
+  outline: none;
+  resize: none;
+  box-shadow: none;
 }
 
 .diff-view {
@@ -229,36 +272,6 @@ watch(
 
 .diff-view.blurred {
   filter: blur(2px);
-}
-
-.source-view {
-  flex: 1;
-  display: flex;
-  overflow-y: auto;
-}
-
-.editor {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.prev-segment {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
-  background: var(--card-bg);
-  padding: 0.5rem 1rem;
-  border: 1px solid #444;
-  border-radius: 6px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  line-height: 1.6;
-  font-size: 1rem;
-  min-height: 200px;
-  flex: 1;
-  text-align: left;
-  overflow-y: auto; /* Scroll content internally */
-  overflow-x: clip; /* Hide horizontal scrollbar */
 }
 
 .floating-refresh-btn {
