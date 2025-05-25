@@ -156,7 +156,9 @@ button:focus-visible {
 .EasyMDEContainer .CodeMirror {
     border: none;
     border-bottom: 1px solid var(--border-color);
-    border-radius: 0px;
+    border-radius: 0;
+
+    height: 27vh;
 }
 .EasyMDEContainer .CodeMirror-scroll {
     min-height: 0 !important;
