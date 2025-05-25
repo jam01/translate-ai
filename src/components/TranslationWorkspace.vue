@@ -122,13 +122,24 @@ watch(
 
 <template>
   <div class="translation-workspace">
-    <div class="pane source-pane">
-     <SourceViewer
-         ref="sourceViewerRef"
-         :source="props.source"
-         :translationDoc="props.translationDoc"
-         @segmentSelected="handleSegmentSelected"
-     />
+    <div class="pane left-pane">
+      <div class="source-view">
+        <SourceViewer
+          ref="sourceViewerRef"
+          :source="props.source"
+          :translationDoc="props.translationDoc"
+          @segmentSelected="handleSegmentSelected"
+        />
+      </div>
+      <div class="editor"><!-- Bottom: Editable Translation -->
+        <VueEasyMDE v-model="editorContent"
+                    :options="{
+                      spellChecker: false,
+                      hideIcons: ['code', 'table', 'image', 'link']
+                    }"
+        />
+        <button @click="handleSaveAndReload">Save & Load Next</button>
+      </div>
     </div>
     <div class="pane right-pane">
       <div class="diff-view" :class="{ 'blurred': isTranslating }"><!-- Top: Diff View -->
@@ -141,15 +152,6 @@ watch(
         >
           🔄
         </button>
-      </div>
-      <div class="editor"><!-- Bottom: Editable Translation -->
-        <VueEasyMDE v-model="editorContent"
-                    :options="{
-                      spellChecker: false,
-                      hideIcons: ['code', 'table', 'image', 'link']
-                    }"
-        />
-        <button @click="handleSaveAndReload">Save & Load Next</button>
       </div>
     </div>
     <transition name="slide">
@@ -183,12 +185,11 @@ watch(
   border-radius: 6px;
   color: var(--text-color);
   text-align: left;
+  gap: 0.25rem;
 }
 
-.source-pane {
+.left-pane {
   width: 50%;
-  background: var(--card-bg);
-  border-right: 1px solid #444;
   overflow-y: auto; /* Scrolling only inside the pane */
   padding: 0; /* Removed extra padding */
 }
@@ -197,7 +198,6 @@ watch(
   width: 50%;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
 }
 
 .diff-view {
@@ -212,6 +212,12 @@ watch(
 
 .diff-view.blurred {
   filter: blur(2px);
+}
+
+.source-view {
+  flex: 1;
+  display: flex;
+  overflow-y: auto;
 }
 
 .editor {
@@ -232,7 +238,7 @@ textarea.translation-editor {
 }
 
 textarea.translation-editor,
-.source-pane,
+.left-pane,
 .diff-view {
   max-height: 100%; /* Prevent overflowing */
 }
