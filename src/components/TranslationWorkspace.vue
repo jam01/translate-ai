@@ -31,7 +31,8 @@ const workingSegment = reactive({
   }
 });
 
-const headers = { Authorization: "Bearer unk" }
+import.meta.env.TKN
+const headers = {Authorization: "Bearer " + import.meta.env.VITE_TKN}
 const simple = new SimpleModelConfig(simplePrompt, headers)
 const main = new SimpleModelConfig(mainPrompt, headers)
 const translator = new TranslationService(simple, main)
@@ -82,11 +83,11 @@ function handleSegmentSelected(segment: { text: string; range: SegmentRange }) {
 
 async function translate() {
   isTranslating.value = true;
-  const c1 = "boop" + Math.random();
-  const c2 = "boop" + Math.random();
+  // const c1 = "boop" + Math.random();
+  // const c2 = "boop" + Math.random();
   // const c1 = 'The Sandinista revolutionary must avoid the simple "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
   // const c2 = 'The Sandinista revolutionary must avoid the mere "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
-  // const { candidate1: c1, candidate2: c2 } = await translator.translate(workingSegment.text);
+  const { candidate1: c1, candidate2: c2 } = await translator.translate(workingSegment.text);
   candidate1.value = c1;
   candidate2.value = c2;
   editorContent.value = c2;
