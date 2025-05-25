@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import {reactive, ref, watch} from "vue";
+import { reactive, ref, watch } from "vue";
 import DiffView from "./DiffView.vue";
 import SourceViewer from "./SourceViewer.vue";
 import type { Segment, SegmentRange, TranslationDocument } from "../types/translationState.ts";
 import { SimpleModelConfig, TranslationService } from "../services/translationService.ts";
+import simplePrompt from '../assets/prompt-simple.txt?raw';
+import mainPrompt from '../assets/prompt-main.txt?raw';
 import { VueEasyMDE } from "vue3-easymde";
+import {getText, seekToParagraph} from "../services/fileReaderService.ts";
 
 const props = defineProps<{
   source: File; // The source file
@@ -13,6 +16,13 @@ const props = defineProps<{
 
 const sourceViewerRef = ref<typeof SourceViewer | null>(null);
 const editorContent = ref('');
+const showCommentsDrawer = ref(false);
+const commentEditor = ref('');
+
+const currSegmentIdx = ref(props.translationDoc.segments.length);
+const isTranslating = ref(false);
+const candidate1 = ref('');
+const candidate2 = ref('');
 const workingSegment = reactive({
   text: '',
   range: {
@@ -21,76 +31,47 @@ const workingSegment = reactive({
   }
 });
 
-const candidate1 = ref('');
-const candidate2 = ref('');
-const isTranslating = ref(false);
-
-const token = ''
-const simple = new SimpleModelConfig(
-    "You are a skilled translator. Your task is to translate the following passage from Spanish into English with precision and sensitivity to the original tone, intent, and context.",
-    {
-      Authorization: "Bearer " + token,
-    }
-)
-const main = new SimpleModelConfig(
-    "You are a skilled translator specializing in political and revolutionary texts from Latin America, with particular expertise in Sandinista ideology and the Nicaraguan revolutionary process (1926–1979). Your task is to translate the following sentence(s) written by Carlos Fonseca Amador from Spanish into English with precision and sensitivity to the original tone, intent, and ideological context.\n" +
-    "\n" +
-    "The text may contain terms related to Marxism-Leninism, anti-imperialism, class struggle, and guerrilla struggle. When translating:\n" +
-    "\n" +
-    "- Preserve the **political connotations** of key terms (e.g., “pueblo,” “lucha de clases,” “imperialismo”).\n" +
-    "- Maintain the **original tone**—whether formal, urgent, inspirational, or analytical.\n" +
-    "- Ensure the **rhetorical force** of slogans or ideological phrases is retained.\n" +
-    "- Respect the author's stylistic and structural choices  as much as possible.\n" +
-    "    - Retain sentence rhythms, especially the use of repetitive or cumulative structures like “idea, idea, idea”—do not reduce them to “idea, idea and idea,” which dilutes the cadence and rhetorical force.\n" +
-    "    - If a phrase is common in Spanish of the time but would sound unnatural in English, adapt it thoughtfully while preserving meaning and tone.\n" +
-    "    - If a phrase appears intentionally unusual or \"weird\" even in the original context, retain it unless it severely hinders comprehension.\n" +
-    "    - Preserve all original formatting, including:\n" +
-    "         Headings, subheadings, and titles.\n" +
-    "         Line breaks, whitespace, and indents--including trailing.\n" +
-    "         Any punctuation, emphasis (like all caps or italics), or non-standard spacing.\n" +
-    "         Maintain the exact placement of pre- and post-text relative to the main passage.\n" +
-    "         Do not alter the visual structure, even if it appears unconventional or repetitive.\n" +
-    "     - Do not output any comments or explanations. Avoid any non-printable characters, encoding artifacts, or extraneous symbols.\n" +
-    "\n" +
-    "Your goal is to produce a translation that is both faithful to the original  and readable to contemporary audiences , especially those engaged with radical politics, history, and revolutionary theory.",
-    {
-      Authorization: "Bearer " + token,
-    }
-)
-
+const headers = { Authorization: "Bearer unk" }
+const simple = new SimpleModelConfig(simplePrompt, headers)
+const main = new SimpleModelConfig(mainPrompt, headers)
 const translator = new TranslationService(simple, main)
 
-const showCommentsDrawer = ref(false);
-const commentEditor = ref('');
-
 function handleSaveAndReload() {
-  if (!sourceViewerRef.value) {
-    console.error("SourceViewer is not loaded yet.");
+  if (isNext()) {
+    if (!sourceViewerRef.value) {
+      console.error("SourceViewer is not loaded yet.");
+      return;
+    }
+
+    const seg: SegmentRange = workingSegment.range
+    const newSegment: Segment = {
+      id: props.translationDoc.segments.length + 1,
+      range: seg,
+      translation: editorContent.value,
+      comments: commentEditor.value.trim() ? [commentEditor.value.trim()] : [],
+      annotations: [],
+      decisions: [],
+      updatedAt: Date.now(),
+    }
+    props.translationDoc.segments.push(newSegment)
+    props.translationDoc.lastProcessedPosition = newSegment.range.end
+    props.translationDoc.lastUpdatedAt = Date.now()
+
+    currSegmentIdx.value++;
+    editorContent.value = "";
+    commentEditor.value = "";
+    sourceViewerRef.value.loadText();
+
     return;
   }
 
-  if (!editorContent.value.trim()) {
-    alert("Translation content cannot be empty!");
-    return;
-  }
-
-  const seg: SegmentRange = workingSegment.range
-  const newSegment: Segment = {
-    id: props.translationDoc.segments.length + 1,
-    range: seg,
-    translation: editorContent.value,
-    comments: commentEditor.value.trim() ? [commentEditor.value.trim()] : [],
-    annotations: [],
-    decisions: [],
-    updatedAt: Date.now(),
-  }
-  props.translationDoc.segments.push(newSegment)
-  props.translationDoc.lastProcessedPosition = newSegment.range.end
+  const segment = props.translationDoc.segments[currSegmentIdx.value]
+  segment.translation = editorContent.value
+  segment.comments = commentEditor.value.trim() ? [commentEditor.value.trim()] : []
+  segment.updatedAt = Date.now()
   props.translationDoc.lastUpdatedAt = Date.now()
 
-  editorContent.value = "";
-  commentEditor.value = "";
-  sourceViewerRef.value.loadText();
+  goForward()
 }
 
 // Handle the segment-selected event from SourceViewer
@@ -101,21 +82,50 @@ function handleSegmentSelected(segment: { text: string; range: SegmentRange }) {
 
 async function translate() {
   isTranslating.value = true;
-  // const c1 = "boop" + Math.random();
-  // const c2 = "boop" + Math.random();
-  // const t1 = 'The Sandinista revolutionary must avoid the simple "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
-  // const t2 = 'The Sandinista revolutionary must avoid the mere "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
-  const { candidate1: c1, candidate2: c2 } = await translator.translate(workingSegment.text);
+  const c1 = "boop" + Math.random();
+  const c2 = "boop" + Math.random();
+  // const c1 = 'The Sandinista revolutionary must avoid the simple "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
+  // const c2 = 'The Sandinista revolutionary must avoid the mere "revolutionary phrase"; we need to accompany this with a deep identification with revolutionary principles.';
+  // const { candidate1: c1, candidate2: c2 } = await translator.translate(workingSegment.text);
   candidate1.value = c1;
   candidate2.value = c2;
   editorContent.value = c2;
   isTranslating.value = false;
 }
 
+async function loadSegment(segment: Segment) {
+  workingSegment.range = segment.range;
+  workingSegment.text = (await getText(props.source, segment.range)).text
+  editorContent.value = segment.translation || '';
+  commentEditor.value = segment.comments.join('\n');
+}
+
+function goBack() {
+  if (currSegmentIdx.value > 0) {
+    currSegmentIdx.value--;
+    loadSegment(props.translationDoc.segments[currSegmentIdx.value]);
+  } else {
+    alert("No previous segments available.");
+  }
+}
+
+function goForward() {
+  if (currSegmentIdx.value <= props.translationDoc.segments.length) {
+    currSegmentIdx.value++;
+    loadSegment((props.translationDoc.segments[currSegmentIdx.value]));
+  } else {
+    alert("No next segments available.");
+  }
+}
+
+function isNext() {
+  return currSegmentIdx.value == props.translationDoc.segments.length;
+}
+
 watch(
     () => workingSegment.text,
     async (newText) => {
-      if (newText) await translate()
+      if (newText && isNext()) await translate()
     }
 );
 </script>
@@ -123,13 +133,21 @@ watch(
 <template>
   <div class="translation-workspace">
     <div class="pane left-pane">
+      <div class="toolbar">
+        <button @click="goBack" :disabled="currSegmentIdx <= 0">← Previous</button>
+        <button @click="goForward" :disabled="currSegmentIdx == props.translationDoc.segments.length">Next →</button>
+      </div>
       <div class="source-view">
-        <SourceViewer
+        <SourceViewer v-if="currSegmentIdx == props.translationDoc.segments.length"
           ref="sourceViewerRef"
           :source="props.source"
           :translationDoc="props.translationDoc"
           @segmentSelected="handleSegmentSelected"
         />
+        <textarea v-else
+            v-model="workingSegment.text"
+            class="prev-segment"
+        ></textarea>
       </div>
       <div class="editor"><!-- Bottom: Editable Translation -->
         <VueEasyMDE v-model="editorContent"
@@ -166,7 +184,6 @@ watch(
     <div class="sidebar-toggle" @click="showCommentsDrawer = !showCommentsDrawer">
       <span>{{ showCommentsDrawer ? '→' : '←' }}</span>
     </div>
-
   </div>
 </template>
 
@@ -226,21 +243,22 @@ watch(
   flex-direction: column;
 }
 
-textarea.translation-editor {
-  flex: 1;
-  background: #1e1e1e;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 0.5rem;
-  color: var(--text-color);
+.prev-segment {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  background: var(--card-bg);
+  padding: 0.5rem 1rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
   font-size: 1rem;
-  resize: none;
-}
-
-textarea.translation-editor,
-.left-pane,
-.diff-view {
-  max-height: 100%; /* Prevent overflowing */
+  min-height: 200px;
+  flex: 1;
+  text-align: left;
+  overflow-y: auto; /* Scroll content internally */
+  overflow-x: clip; /* Hide horizontal scrollbar */
 }
 
 .floating-refresh-btn {

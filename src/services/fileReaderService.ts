@@ -1,3 +1,5 @@
+import type {SegmentRange} from "../types/translationState.ts";
+
 /**
  * Reads a file from a given byte offset and extracts complete paragraphs until reaching a specified word limit.
  * The function ensures paragraphs are properly separated by blank lines and stops at paragraph boundaries.
@@ -54,6 +56,21 @@ export async function seekToParagraph(
     return {
         text: result,
     };
+}
+
+export async function getText(file: File, range: SegmentRange): Promise<{ text: string }> {
+    const stream = file.slice(range.start.byteOffset, range.end.byteOffset).stream().pipeThrough(new TextDecoderStream());
+    const reader = stream.getReader();
+    let buffer = '';
+
+    // Read the file slice within the range
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break; // Exit when the reading is finished
+        buffer += value;
+    }
+
+    return { text: buffer };
 }
 
 // Helper function to count words in a string
