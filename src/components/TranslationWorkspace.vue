@@ -128,6 +128,25 @@ function isNext() {
   return currSegmentIdx.value == props.translationDoc.segments.length;
 }
 
+function goFirst() {
+  if (currSegmentIdx.value > 0) {
+    currSegmentIdx.value = 0;
+    loadSegment(props.translationDoc.segments[currSegmentIdx.value]);
+  } else {
+    alert("No previous segments available.");
+  }
+}
+
+function goNext() {
+  if (currSegmentIdx.value < props.translationDoc.segments.length) {
+    currSegmentIdx.value = props.translationDoc.segments.length;
+    editorContent.value = "";
+    commentEditor.value = "";
+  } else {
+    alert("Already at the next working segment.");
+  }
+}
+
 watch(
     () => workingSegment.text,
     async (newText) => {
@@ -141,8 +160,14 @@ watch(
     <div class="pane left-pane">
       <div class="source">
         <div class="toolbar">
+          <!-- Add first button -->
+          <button @click="goFirst" :disabled="currSegmentIdx <= 0">⇤ First</button>
           <button @click="goBack" :disabled="currSegmentIdx <= 0">← Previous</button>
+          <span class="index-indicator">
+            Segment {{ currSegmentIdx + 1 }} of {{ props.translationDoc.segments.length + 1 }}
+          </span>
           <button @click="goForward" :disabled="currSegmentIdx == props.translationDoc.segments.length">Next →</button>
+          <button @click="goNext" :disabled="currSegmentIdx >= props.translationDoc.segments.length">⇥ Last</button>
         </div>
         <SourceViewer v-if="currSegmentIdx == props.translationDoc.segments.length"
           ref="sourceViewerRef"
@@ -230,6 +255,7 @@ watch(
   .toolbar {
     display: flex;
     background-color: var(--bg-color);
+    align-items: center;
   }
 }
 
